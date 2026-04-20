@@ -24,11 +24,7 @@ class PromptLogprobsWorker:
     def add_request(self, req_id: str, req_idx: int, sampling_params: SamplingParams):
         uses_prompt_logprobs = sampling_params.prompt_logprobs is not None
         self.uses_prompt_logprobs[req_idx] = uses_prompt_logprobs
-        self.num_prompt_logprobs[req_idx] = (
-            0
-            if sampling_params.prompt_logprobs is None
-            else sampling_params.prompt_logprobs
-        )
+        self.num_prompt_logprobs[req_idx] =  sampling_params.prompt_logprobs or 0
         if uses_prompt_logprobs:
             self.in_progress_prompt_logprobs[req_id] = []
 
