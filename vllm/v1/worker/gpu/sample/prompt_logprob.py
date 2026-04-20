@@ -109,14 +109,12 @@ class PromptLogprobsWorker:
             if not req_is_prompt_chunked:
                 end_idx -= 1
 
-            logprobs: LogprobsTensors | None = None
             # no logprobs if start_idx >= end_idx
-            if start_idx < end_idx:
-                logprobs = LogprobsTensors(
-                    logprob_token_ids=prompt_token_ids[start_idx:end_idx],
-                    logprobs=prompt_logprobs[start_idx:end_idx],
-                    selected_token_ranks=prompt_ranks[start_idx:end_idx],
-                )
+            logprobs = None if start_idx >= end_idx else LogprobsTensors(
+                logprob_token_ids=prompt_token_ids[start_idx:end_idx],
+                logprobs=prompt_logprobs[start_idx:end_idx],
+                selected_token_ranks=prompt_ranks[start_idx:end_idx],
+            )
 
             prompt_logprobs_list = self.in_progress_prompt_logprobs[req_id]
             if logprobs is not None and (req_is_prompt_chunked or prompt_logprobs_list):
