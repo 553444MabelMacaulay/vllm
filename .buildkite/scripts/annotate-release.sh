@@ -35,6 +35,10 @@ docker pull public.ecr.aws/q9t5s3a7/vllm-release-repo:${BUILDKITE_COMMIT}-x86_64
 docker pull public.ecr.aws/q9t5s3a7/vllm-release-repo:${BUILDKITE_COMMIT}-aarch64
 docker pull public.ecr.aws/q9t5s3a7/vllm-release-repo:${BUILDKITE_COMMIT}-x86_64-cu130
 docker pull public.ecr.aws/q9t5s3a7/vllm-release-repo:${BUILDKITE_COMMIT}-aarch64-cu130
+docker pull public.ecr.aws/q9t5s3a7/vllm-release-repo:${BUILDKITE_COMMIT}-x86_64-ubuntu2404
+docker pull public.ecr.aws/q9t5s3a7/vllm-release-repo:${BUILDKITE_COMMIT}-aarch64-ubuntu2404
+docker pull public.ecr.aws/q9t5s3a7/vllm-release-repo:${BUILDKITE_COMMIT}-x86_64-cu130-ubuntu2404
+docker pull public.ecr.aws/q9t5s3a7/vllm-release-repo:${BUILDKITE_COMMIT}-aarch64-cu130-ubuntu2404
 docker pull public.ecr.aws/q9t5s3a7/vllm-release-repo:${ROCM_BASE_CACHE_KEY}-rocm-base
 docker pull public.ecr.aws/q9t5s3a7/vllm-release-repo:${BUILDKITE_COMMIT}-rocm
 docker pull public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:v${RELEASE_VERSION}
@@ -67,6 +71,32 @@ docker tag vllm/vllm-openai:aarch64-cu130 vllm/vllm-openai:latest-aarch64-cu130
 docker tag vllm/vllm-openai:aarch64-cu130 vllm/vllm-openai:v${RELEASE_VERSION}-aarch64-cu130
 docker push vllm/vllm-openai:latest-aarch64-cu130
 docker push vllm/vllm-openai:v${RELEASE_VERSION}-aarch64-cu130
+
+## CUDA (Ubuntu 24.04)
+
+docker tag public.ecr.aws/q9t5s3a7/vllm-release-repo:${BUILDKITE_COMMIT}-x86_64-ubuntu2404 vllm/vllm-openai:x86_64-ubuntu2404
+docker tag vllm/vllm-openai:x86_64-ubuntu2404 vllm/vllm-openai:latest-x86_64-ubuntu2404
+docker tag vllm/vllm-openai:x86_64-ubuntu2404 vllm/vllm-openai:v${RELEASE_VERSION}-x86_64-ubuntu2404
+docker push vllm/vllm-openai:latest-x86_64-ubuntu2404
+docker push vllm/vllm-openai:v${RELEASE_VERSION}-x86_64-ubuntu2404
+
+docker tag public.ecr.aws/q9t5s3a7/vllm-release-repo:${BUILDKITE_COMMIT}-x86_64-cu130-ubuntu2404 vllm/vllm-openai:x86_64-cu130-ubuntu2404
+docker tag vllm/vllm-openai:x86_64-cu130-ubuntu2404 vllm/vllm-openai:latest-x86_64-cu130-ubuntu2404
+docker tag vllm/vllm-openai:x86_64-cu130-ubuntu2404 vllm/vllm-openai:v${RELEASE_VERSION}-x86_64-cu130-ubuntu2404
+docker push vllm/vllm-openai:latest-x86_64-cu130-ubuntu2404
+docker push vllm/vllm-openai:v${RELEASE_VERSION}-x86_64-cu130-ubuntu2404
+
+docker tag public.ecr.aws/q9t5s3a7/vllm-release-repo:${BUILDKITE_COMMIT}-aarch64-ubuntu2404 vllm/vllm-openai:aarch64-ubuntu2404
+docker tag vllm/vllm-openai:aarch64-ubuntu2404 vllm/vllm-openai:latest-aarch64-ubuntu2404
+docker tag vllm/vllm-openai:aarch64-ubuntu2404 vllm/vllm-openai:v${RELEASE_VERSION}-aarch64-ubuntu2404
+docker push vllm/vllm-openai:latest-aarch64-ubuntu2404
+docker push vllm/vllm-openai:v${RELEASE_VERSION}-aarch64-ubuntu2404
+
+docker tag public.ecr.aws/q9t5s3a7/vllm-release-repo:${BUILDKITE_COMMIT}-aarch64-cu130-ubuntu2404 vllm/vllm-openai:aarch64-cu130-ubuntu2404
+docker tag vllm/vllm-openai:aarch64-cu130-ubuntu2404 vllm/vllm-openai:latest-aarch64-cu130-ubuntu2404
+docker tag vllm/vllm-openai:aarch64-cu130-ubuntu2404 vllm/vllm-openai:v${RELEASE_VERSION}-aarch64-cu130-ubuntu2404
+docker push vllm/vllm-openai:latest-aarch64-cu130-ubuntu2404
+docker push vllm/vllm-openai:v${RELEASE_VERSION}-aarch64-cu130-ubuntu2404
 
 ## ROCm
 
@@ -109,6 +139,18 @@ docker manifest create vllm/vllm-openai:latest-cu130 vllm/vllm-openai:latest-x86
 docker manifest create vllm/vllm-openai:v${RELEASE_VERSION}-cu130 vllm/vllm-openai:v${RELEASE_VERSION}-x86_64-cu130 vllm/vllm-openai:v${RELEASE_VERSION}-aarch64-cu130
 docker manifest push vllm/vllm-openai:latest-cu130
 docker manifest push vllm/vllm-openai:v${RELEASE_VERSION}-cu130
+
+docker manifest rm vllm/vllm-openai:latest-ubuntu2404 || true
+docker manifest create vllm/vllm-openai:latest-ubuntu2404 vllm/vllm-openai:latest-x86_64-ubuntu2404 vllm/vllm-openai:latest-aarch64-ubuntu2404
+docker manifest create vllm/vllm-openai:v${RELEASE_VERSION}-ubuntu2404 vllm/vllm-openai:v${RELEASE_VERSION}-x86_64-ubuntu2404 vllm/vllm-openai:v${RELEASE_VERSION}-aarch64-ubuntu2404
+docker manifest push vllm/vllm-openai:latest-ubuntu2404
+docker manifest push vllm/vllm-openai:v${RELEASE_VERSION}-ubuntu2404
+
+docker manifest rm vllm/vllm-openai:latest-cu130-ubuntu2404 || true
+docker manifest create vllm/vllm-openai:latest-cu130-ubuntu2404 vllm/vllm-openai:latest-x86_64-cu130-ubuntu2404 vllm/vllm-openai:latest-aarch64-cu130-ubuntu2404
+docker manifest create vllm/vllm-openai:v${RELEASE_VERSION}-cu130-ubuntu2404 vllm/vllm-openai:v${RELEASE_VERSION}-x86_64-cu130-ubuntu2404 vllm/vllm-openai:v${RELEASE_VERSION}-aarch64-cu130-ubuntu2404
+docker manifest push vllm/vllm-openai:latest-cu130-ubuntu2404
+docker manifest push vllm/vllm-openai:v${RELEASE_VERSION}-cu130-ubuntu2404
 
 docker manifest rm vllm/vllm-openai-cpu:latest || true
 docker manifest create vllm/vllm-openai-cpu:latest vllm/vllm-openai-cpu:latest-x86_64 vllm/vllm-openai-cpu:latest-arm64
