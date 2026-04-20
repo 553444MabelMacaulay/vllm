@@ -24,7 +24,7 @@ class PromptLogprobsWorker:
     def add_request(self, req_id: str, req_idx: int, sampling_params: SamplingParams):
         uses_prompt_logprobs = sampling_params.prompt_logprobs is not None
         self.uses_prompt_logprobs[req_idx] = uses_prompt_logprobs
-        self.num_prompt_logprobs[req_idx] =  sampling_params.prompt_logprobs or 0
+        self.num_prompt_logprobs[req_idx] = sampling_params.prompt_logprobs or 0
         if uses_prompt_logprobs:
             self.in_progress_prompt_logprobs[req_id] = []
 
@@ -67,10 +67,11 @@ class PromptLogprobsWorker:
             return {}
 
         # get the maximum number in this batch
+        requested_num_prompt_logprobs = num_prompt_logprobs[needs_prompt_logprobs]
         max_num_prompt_logprobs = (
             -1
-            if np.any(num_prompt_logprobs[needs_prompt_logprobs] == -1)
-            else int(num_prompt_logprobs[needs_prompt_logprobs].max())
+            if np.any(requested_num_prompt_logprobs == -1)
+            else int(requested_num_prompt_logprobs.max())
         )
 
         # Get the prompt logprobs token_ids.
@@ -99,12 +100,13 @@ class PromptLogprobsWorker:
             if not needs_prompt_logprobs[i]:
                 continue
 
+            req_is_prompt_chunked = is_prompt_chunked[i]
             start_idx = query_start_loc_np[i]
             end_idx = query_start_loc_np[i + 1]
             assert start_idx < end_idx, (
                 f"start_idx ({start_idx}) >= end_idx ({end_idx})"
             )
-            if not is_prompt_chunked[i]:
+            if not req_is_prompt_chunked:
                 end_idx -= 1
 
             logprobs: LogprobsTensors | None = None
@@ -117,9 +119,9 @@ class PromptLogprobsWorker:
                 )
 
             prompt_logprobs_list = self.in_progress_prompt_logprobs[req_id]
-            if logprobs is not None and (is_prompt_chunked[i] or prompt_logprobs_list):
+            if logprobs is not None and (req_is_prompt_chunked or prompt_logprobs_list):
                 prompt_logprobs_list.append(logprobs)
-            if is_prompt_chunked[i]:
+            if req_is_prompt_chunked:
                 # Prompt is chunked. Do not return the logprobs yet.
                 continue
 
