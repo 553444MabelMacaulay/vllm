@@ -1,0 +1,104 @@
+# Buildkite pipeline configuration for CUDA hardware tests
+# Runs tests on NVIDIA GPU instances
+
+steps:
+  - label: ":nvidia: CUDA Unit Tests"
+    key: cuda-unit-tests
+    agents:
+      queue: cuda
+    plugins:
+      - docker#v5.11.0:
+          image: "vllm/vllm-ci:latest"
+          gpus: all
+          environment:
+            - VLLM_WORKER_MULTIPROC_METHOD=spawn
+            - CUDA_VISIBLE_DEVICES=0,1
+    commands:
+      - echo "--- Running CUDA unit tests"
+      - pip install -e . --no-build-isolation
+      - pytest tests/test_cache_engine.py -v --tb=short
+      - pytest tests/test_config.py -v --tb=short
+      - pytest tests/test_sampling_params.py -v --tb=short
+    timeout_in_minutes: 60
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 2
+
+  - label: ":nvidia: CUDA Engine Tests"
+    key: cuda-engine-tests
+    depends_on: cuda-unit-tests
+    agents:
+      queue: cuda
+    plugins:
+      - docker#v5.11.0:
+          image: "vllm/vllm-ci:latest"
+          gpus: all
+          environment:
+            - VLLM_WORKER_MULTIPROC_METHOD=spawn
+            - CUDA_VISIBLE_DEVICES=0,1
+    commands:
+      - echo "--- Running engine tests"
+      - pip install -e . --no-build-isolation
+      - pytest tests/engine/ -v --tb=short -x
+    timeout_in_minutes: 90
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 1
+
+  - label: ":nvidia: CUDA Model Tests (FP16)"
+    key: cuda-model-tests-fp16
+    agents:
+      queue: cuda-large
+    plugins:
+      - docker#v5.11.0:
+          image: "vllm/vllm-ci:latest"
+          gpus: all
+          environment:
+            - VLLM_WORKER_MULTIPROC_METHOD=spawn
+            - CUDA_VISIBLE_DEVICES=0,1
+    commands:
+      - echo "--- Running model tests with FP16"
+      - pip install -e . --no-build-isolation
+      - pytest tests/models/ -v --tb=short -k "fp16" --timeout=300
+    timeout_in_minutes: 120
+
+  - label: ":nvidia: CUDA Quantization Tests"
+    key: cuda-quantization-tests
+    agents:
+      queue: cuda-large
+    plugins:
+      - docker#v5.11.0:
+          image: "vllm/vllm-ci:latest"
+          gpus: all
+          environment:
+            - VLLM_WORKER_MULTIPROC_METHOD=spawn
+    commands:
+      - echo "--- Running quantization tests"
+      - pip install -e . --no-build-isolation
+      - pytest tests/quantization/ -v --tb=short --timeout=300
+    timeout_in_minutes: 90
+    soft_fail:
+      - exit_status: 1
+
+  - label: ":nvidia: CUDA Distributed Tests (2 GPUs)"
+    key: cuda-distributed-tests
+    agents:
+      queue: cuda-multi-gpu
+    plugins:
+      - docker#v5.11.0:
+          image: "vllm/vllm-ci:latest"
+          gpus: all
+          environment:
+            - VLLM_WORKER_MULTIPROC_METHOD=spawn
+            - CUDA_VISIBLE_DEVICES=0,1
+    commands:
+      - echo "--- Running distributed inference tests"
+      - pip install -e . --no-build-isolation
+      - pytest tests/distributed/ -v --tb=short -x --timeout=600
+    timeout_in_minutes: 120
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 1
