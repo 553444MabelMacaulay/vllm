@@ -1,0 +1,55 @@
+# Hardware tests for Google TPU (v4/v5e/v5p)
+# Runs vllm inference and serving tests on TPU instances
+
+steps:
+  - label: ":google: TPU v4 - Basic Inference Tests"
+    key: tpu-v4-inference
+    agents:
+      queue: tpu-v4
+    env:
+      VLLM_TARGET_DEVICE: tpu
+      HF_TOKEN: ${HF_TOKEN}
+    commands:
+      - echo "--- Setting up TPU environment"
+      - pip install -e ".[tpu]" --extra-index-url https://storage.googleapis.com/jax-releases/libtpu_releases.html
+      - echo "--- Running TPU basic inference tests"
+      - pytest tests/tpu/test_basic_correctness.py -v --timeout=300
+      - pytest tests/tpu/test_sampling.py -v --timeout=300
+    timeout_in_minutes: 60
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 2
+
+  - label: ":google: TPU v4 - Model Tests"
+    key: tpu-v4-models
+    depends_on: tpu-v4-inference
+    agents:
+      queue: tpu-v4
+    env:
+      VLLM_TARGET_DEVICE: tpu
+      HF_TOKEN: ${HF_TOKEN}
+    commands:
+      - echo "--- Running TPU model tests"
+      - pytest tests/tpu/test_llama.py -v --timeout=600
+      - pytest tests/tpu/test_gemma.py -v --timeout=600
+    timeout_in_minutes: 90
+
+  - label: ":google: TPU v5e - Serving Tests"
+    key: tpu-v5e-serving
+    agents:
+      queue: tpu-v5e
+    env:
+      VLLM_TARGET_DEVICE: tpu
+      HF_TOKEN: ${HF_TOKEN}
+    commands:
+      - echo "--- Setting up TPU v5e environment"
+      - pip install -e ".[tpu]" --extra-index-url https://storage.googleapis.com/jax-releases/libtpu_releases.html
+      - echo "--- Running serving tests on TPU v5e"
+      - pytest tests/tpu/test_serving.py -v --timeout=600
+      - pytest tests/entrypoints/openai/test_completion.py -v --timeout=300 -k "not cuda"
+    timeout_in_minutes: 90
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 2
