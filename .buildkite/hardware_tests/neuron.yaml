@@ -1,0 +1,84 @@
+# Buildkite pipeline configuration for AWS Neuron (Inferentia/Trainium) hardware tests
+# This pipeline runs vllm tests on AWS Neuron devices
+
+steps:
+  - label: ":aws: Neuron - Build & Install"
+    key: neuron-build
+    agents:
+      queue: neuron
+    commands:
+      - echo "--- Setting up Neuron environment"
+      - pip install --upgrade pip
+      - pip install torch-neuronx neuronx-cc --extra-index-url https://pip.repos.neuron.amazonaws.com
+      - echo "--- Installing vllm"
+      - pip install -e ".[neuron]"
+      - echo "--- Verifying Neuron device availability"
+      - python -c "import torch_neuronx; print('Neuron devices:', torch_neuronx.xla_device())"
+    timeout_in_minutes: 30
+    retry:
+      automatic:
+        - exit_status: "*"
+          limit: 1
+
+  - label: ":aws: Neuron - Basic Inference Tests"
+    key: neuron-inference
+    depends_on: neuron-build
+    agents:
+      queue: neuron
+    commands:
+      - echo "--- Running basic inference tests on Neuron"
+      - pytest tests/neuron/ -v --timeout=300 -x
+        --ignore=tests/neuron/test_neuron_multi_node.py
+    timeout_in_minutes: 60
+    retry:
+      automatic:
+        - exit_status: "*"
+          limit: 1
+
+  - label: ":aws: Neuron - Model Loading Tests"
+    key: neuron-model-loading
+    depends_on: neuron-build
+    agents:
+      queue: neuron
+    commands:
+      - echo "--- Running model loading tests"
+      - pytest tests/neuron/test_neuron_model_loader.py -v --timeout=600
+    timeout_in_minutes: 90
+    retry:
+      automatic:
+        - exit_status: "*"
+          limit: 1
+
+  - label: ":aws: Neuron - Sampling Tests"
+    key: neuron-sampling
+    depends_on: neuron-build
+    agents:
+      queue: neuron
+    commands:
+      - echo "--- Running sampling parameter tests"
+      - pytest tests/samplers/ -v --timeout=300
+        -k "not cuda and not gpu"
+    timeout_in_minutes: 60
+
+  - label: ":aws: Neuron - Engine Tests"
+    key: neuron-engine
+    depends_on: neuron-build
+    agents:
+      queue: neuron
+    commands:
+      - echo "--- Running LLM engine tests"
+      - pytest tests/engine/ -v --timeout=300
+        -k "not cuda and not gpu"
+    timeout_in_minutes: 60
+
+  - wait: ~
+    continue_on_failure: true
+
+  - label: ":aws: Neuron - Test Results"
+    key: neuron-results
+    agents:
+      queue: neuron
+    commands:
+      - echo "--- Collecting test results"
+      - buildkite-agent artifact upload "test-results/**/*.xml"
+    allow_dependency_failure: true
